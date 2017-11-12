@@ -15,4 +15,4 @@ namespace aperta_compiler
 	void ReadEnter();
 }
 
-#endif
+#endif // LOGGER_H
