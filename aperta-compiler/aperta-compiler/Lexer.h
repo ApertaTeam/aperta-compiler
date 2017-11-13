@@ -15,7 +15,7 @@ namespace aperta_compiler
 			Keyword, // func, etc.
 			Identifier, // abc123, _a32, etc. cannot start with a number
 			Semicolon, // ;
-			ConditonalOp, // ==, !=, >=, <=, ||, &&, <, >, maybe !
+			ConditonalOp, // ==, !=, >=, <=, ||, &&, <, >
 			BinOpEquals, // +=, -=, *=, /=
 			BinOp, // +, -, *, /
 			Equals, // =
@@ -29,7 +29,8 @@ namespace aperta_compiler
 			Colon, // :
 			Comma, // ,
 			Not, // !
-			Ampersand // &
+			Ampersand, // &
+			Tilde // ~
 		};
 
 		struct Token {

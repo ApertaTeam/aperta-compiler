@@ -80,10 +80,17 @@ namespace aperta_compiler
 			// For safety and ease in detecting unenclosed things.
 			input += "\n   ";
 
-			for (int pos = 0; pos < (int)input.length(); pos++)
+			int pos = 0;
+			while (pos < (int)input.length())
 			{
+				// Detect newlines
+				if (input[pos] == '\n')
+				{
+					line++;
+				}
+
 				// Skip whitespace
-				while (pos < (int)input.length() && (input[pos] == ' ' || input[pos] == '\t' || input[pos] == '\v'))
+				while (pos < (int)input.length() && iswspace(input[pos]))
 				{
 					pos++;
 				}
@@ -110,21 +117,23 @@ namespace aperta_compiler
 				else if (DetectToken(input, pos, '"'))
 				{
 					std::string contents = "";
-					while (pos < (int)input.length() && !DetectToken(input, pos, '"')) 
+					while (pos < (int)input.length() && !DetectToken(input, pos, '"'))
 					{
-						if (input[pos] == '\\') 
+						if (input[pos] == '\\')
 						{
 							pos++;
 							if (input[pos] == '"') {
 								contents += '"';
-							} else if (input[pos] == 'n') {
+							}
+							else if (input[pos] == 'n') {
 								contents += 0x0A;
-							} else if (input[pos] == 'r') {
+							}
+							else if (input[pos] == 'r') {
 								contents += 0x0D;
 							}
 							pos++;
 						}
-						else 
+						else
 						{
 							contents += input[pos];
 							if (input[pos] == '\n')
@@ -139,7 +148,7 @@ namespace aperta_compiler
 					}
 					else
 					{
-						tokens.push_back({line, String, contents});
+						tokens.push_back({ line, String, contents });
 					}
 				}
 				// Character
@@ -174,7 +183,7 @@ namespace aperta_compiler
 					}
 					else
 					{
-						tokens.push_back({line, Character, content});
+						tokens.push_back({ line, Character, content });
 					}
 				}
 				// Number
@@ -191,7 +200,7 @@ namespace aperta_compiler
 							if (!usedDot)
 							{
 								usedDot = true;
-							} 
+							}
 							else
 							{
 								ErrorMessage = "Malformed number.";
@@ -201,14 +210,172 @@ namespace aperta_compiler
 						contents += input[pos];
 						pos++;
 					}
-					tokens.push_back({line, Number, contents});
+					tokens.push_back({ line, Number, contents });
 				}
-
-				// Detect newlines
-				if (input[pos] == '\n')
+				// Identifier
+				else if (isalpha(input[pos]) || input[pos] == '_')
 				{
-					line++;
+					std::string contents = "";
+					contents += input[pos];
+					pos++;
+					while (pos < (int)input.length() && (isalpha(input[pos]) || isdigit(input[pos]) || input[pos] == '_'))
+					{
+						contents += input[pos];
+						pos++;
+					}
+					tokens.push_back({ line, Identifier, contents });
 				}
+				// Semicolon
+				else if (DetectToken(input, pos, ';'))\
+				{
+					tokens.push_back({ line, Semicolon, ";" });
+				}
+				// Conditional Operators
+				else if (DetectToken(input, pos, '=', '='))
+				{
+					tokens.push_back({ line, ConditonalOp, "==" });
+				}
+				else if (DetectToken(input, pos, '!', '='))
+				{
+					tokens.push_back({ line, ConditonalOp, "!=" });
+				}
+				else if (DetectToken(input, pos, '>', '='))
+				{
+					tokens.push_back({ line, ConditonalOp, ">=" });
+				}
+				else if (DetectToken(input, pos, '<', '='))
+				{
+					tokens.push_back({ line, ConditonalOp, "<=" });
+				}
+				else if (DetectToken(input, pos, '|', '|'))
+				{
+					tokens.push_back({ line, ConditonalOp, "||" });
+				}
+				else if (DetectToken(input, pos, '&', '&'))
+				{
+					tokens.push_back({ line, ConditonalOp, "&&" });
+				}
+				else if (DetectToken(input, pos, '>'))
+				{
+					tokens.push_back({ line, ConditonalOp, ">" });
+				}
+				else if (DetectToken(input, pos, '<'))
+				{
+					tokens.push_back({ line, ConditonalOp, "<" });
+				}
+				// BinOp Equals
+				else if (DetectToken(input, pos, '+', '+'))
+				{
+					// "++" becomes "+= 1" at compile time.
+					tokens.push_back({ line, BinOpEquals, "+=" });
+					tokens.push_back({ line, Number, "1" });
+				}
+				else if (DetectToken(input, pos, '-', '-'))
+				{
+					// "++" becomes "+= 1" at compile time.
+					tokens.push_back({ line, BinOpEquals, "-=" });
+					tokens.push_back({ line, Number, "1" });
+				}
+				else if (DetectToken(input, pos, '+', '='))
+				{
+					tokens.push_back({ line, BinOpEquals, "+=" });
+				}
+				else if (DetectToken(input, pos, '-', '='))
+				{
+					tokens.push_back({ line, BinOpEquals, "-=" });
+				}
+				else if (DetectToken(input, pos, '*', '='))
+				{
+					tokens.push_back({ line, BinOpEquals, "*=" });
+				}
+				else if (DetectToken(input, pos, '/', '='))
+				{
+					tokens.push_back({ line, BinOpEquals, "/=" });
+				}
+				// BinOp
+				else if (DetectToken(input, pos, '+'))
+				{
+					tokens.push_back({ line, BinOp, "+" });
+				}
+				else if (DetectToken(input, pos, '-'))
+				{
+					tokens.push_back({ line, BinOp, "-" });
+				}
+				else if (DetectToken(input, pos, '*'))
+				{
+					tokens.push_back({ line, BinOp, "*" });
+				}
+				else if (DetectToken(input, pos, '/'))
+				{
+					tokens.push_back({ line, BinOp, "/" });
+				}
+				// Equals
+				else if (DetectToken(input, pos, '='))
+				{
+					tokens.push_back({ line, Equals, "=" });
+				}
+				// OpenParen
+				else if (DetectToken(input, pos, '('))
+				{
+					tokens.push_back({ line, OpenParen, "(" });
+				}
+				// CloseParen
+				else if (DetectToken(input, pos, ')'))
+				{
+					tokens.push_back({ line, CloseParen, ")" });
+				}
+				// OpenBrack
+				else if (DetectToken(input, pos, '['))
+				{
+					tokens.push_back({ line, OpenBrack, "[" });
+				}
+				// CloseBrack
+				else if (DetectToken(input, pos, ']'))
+				{
+					tokens.push_back({ line, CloseBrack, "]" });
+				}
+				// OpenBrace
+				else if (DetectToken(input, pos, '{'))
+				{
+					tokens.push_back({ line, OpenBrace, "{" });
+				}
+				// CloseBrace
+				else if (DetectToken(input, pos, '}'))
+				{
+					tokens.push_back({ line, CloseBrace, "}" });
+				}
+				// Dot
+				else if (DetectToken(input, pos, '.'))
+				{
+					tokens.push_back({ line, Dot, "." });
+				}
+				// Colon
+				else if (DetectToken(input, pos, ':'))
+				{
+					tokens.push_back({ line, Colon, ":" });
+				}
+				// Comma
+				else if (DetectToken(input, pos, ','))
+				{
+					tokens.push_back({ line, Comma, "," });
+				}
+				// Not
+				else if (DetectToken(input, pos, '!'))
+				{
+					tokens.push_back({ line, Not, "!" });
+				}
+				// Ampersand
+				else if (DetectToken(input, pos, '&'))
+				{
+					tokens.push_back({ line, Ampersand, "&" });
+				}
+				// Tilde
+				else if (DetectToken(input, pos, '~'))
+				{
+					tokens.push_back({ line, Tilde, "~" });
+				}
+				else
+					pos++;
 			}
 
 			return tokens;
